@@ -110,6 +110,7 @@
             border-radius: 0 8px 8px 0;
             font-size: 14px;
             color: #555;
+            line-height: 1.6;
         }
         .prompt-box {
             background: #1e1e1e;
@@ -257,10 +258,8 @@
     </div>
 
     <script>
-        // API配置（你的密钥和Bot ID）
-        const API_KEY = 'pat_cSo4fTDYGNDJvbajkfzY2ZpY6P1nHkgDQxNKubm7BFeeyFkI1NkC9G0Y7uzPUI0t';
-        const BOT_ID = '7488009369294827546';
-        const API_URL =  'https://seedance-generator-ten.vercel.app/api/generate';
+        // API配置 - 使用Vercel代理地址
+        const API_URL = 'https://seedance-generator-ten.vercel.app/api/generate';
         
         async function generatePrompt() {
             const scene = document.getElementById('sceneInput').value.trim();
@@ -272,9 +271,6 @@
                 return;
             }
             
-            // 构建完整查询
-            const fullQuery = `${scene}，${duration}秒，${style}风格`;
-            
             // UI状态
             document.getElementById('genBtn').disabled = true;
             document.getElementById('loading').style.display = 'block';
@@ -282,19 +278,17 @@
             document.getElementById('error').style.display = 'none';
             
             try {
-               const response = await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json'
-        // 删除 Authorization 行，后端会自动加
-    },
-    body: JSON.stringify({
-        scene: scene,
-        duration: duration,
-        style: style
-        // 只传这三个简单参数，其他的后端处理
-    })
-});
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        scene: scene,
+                        duration: duration,
+                        style: style
+                    })
+                });
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -313,32 +307,22 @@
                     throw new Error('无法解析API响应');
                 }
                 
+                // 处理转义字符：先把 \\n 换成 \n，再把 \\ 去掉，最后把 \n 换成 <br>
+                content = content.replace(/\\n/g, '\n').replace(/\\\\/g, '');
+                
                 // 分离版本优化和提示词
-const parts = content.split('### 【');
-if (parts.length >= 3) {
-    const versionPart = '### 【' + parts[1];
-    const promptPart = '### 【' + parts[2];
-    
-   // 处理转义字符（把 \n 变成真换行，把 \\ 去掉）
-let versionText = versionPart.replace('### 【版本优化】', '').trim().replace(/\\n/g, '\n').replace(/\\\\/g, '');
-let promptText = ('### 【' + promptPart.trim()).replace(/\\n/g, '\n').replace(/\\\\/g, '');
-
-document.getElementById('versionBox').innerHTML = versionText.replace(/\n/g, '<br>');
-document.getElementById('promptContent').innerHTML = promptText.replace(/\n/g, '<br>');
-} else {
-    document.getElementById('versionBox').textContent = '已生成专业提示词';
-    document.getElementById('promptContent').textContent = content;
-}
+                const parts = content.split('### 【');
                 if (parts.length >= 3) {
                     const versionPart = '### 【' + parts[1];
                     const promptPart = '### 【' + parts[2];
                     
-                    document.getElementById('versionBox').textContent = versionPart.replace('### 【版本优化】', '').trim();
-                    document.getElementById('promptContent').textContent = '### 【' + promptPart.trim();
+                    // 替换 \n 为 <br> 并显示
+                    document.getElementById('versionBox').innerHTML = versionPart.replace('### 【版本优化】', '').trim().replace(/\n/g, '<br>');
+                    document.getElementById('promptContent').innerHTML = ('### 【' + promptPart.trim()).replace(/\n/g, '<br>');
                 } else {
                     // 如果格式不对，直接显示全部
                     document.getElementById('versionBox').textContent = '已生成专业提示词';
-                    document.getElementById('promptContent').textContent = content;
+                    document.getElementById('promptContent').innerHTML = content.replace(/\n/g, '<br>');
                 }
                 
                 document.getElementById('result').classList.add('show');
@@ -354,7 +338,7 @@ document.getElementById('promptContent').innerHTML = promptText.replace(/\n/g, '
         }
         
         function copyPrompt() {
-            const text = document.getElementById('promptContent').textContent;
+            const text = document.getElementById('promptContent').innerText;
             navigator.clipboard.writeText(text).then(() => {
                 const btn = document.querySelector('.copy-btn');
                 btn.textContent = '已复制!';
