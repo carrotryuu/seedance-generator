@@ -26,19 +26,10 @@
             padding: 40px;
             text-align: center;
         }
-        .header h1 { 
-            font-size: 32px; 
-            margin-bottom: 10px;
-            font-weight: 700;
-        }
-        .header p { 
-            opacity: 0.9; 
-            font-size: 16px;
-        }
+        .header h1 { font-size: 32px; margin-bottom: 10px; font-weight: 700; }
+        .header p { opacity: 0.9; font-size: 16px; }
         .content { padding: 40px; }
-        .input-group { 
-            margin-bottom: 30px; 
-        }
+        .input-group { margin-bottom: 30px; }
         label { 
             display: block; 
             margin-bottom: 10px; 
@@ -54,20 +45,16 @@
             border-radius: 10px;
             font-size: 15px;
             resize: vertical;
-            transition: border-color 0.3s;
             font-family: inherit;
         }
-        textarea:focus { 
-            outline: none; 
-            border-color: #667eea; 
-        }
+        textarea:focus { outline: none; border-color: #667eea; }
         .options { 
             display: grid; 
             grid-template-columns: 1fr 1fr; 
             gap: 20px;
             margin-bottom: 30px;
         }
-        select, input[type="number"] {
+        select {
             width: 100%;
             padding: 12px;
             border: 2px solid #e0e0e0;
@@ -91,7 +78,6 @@
             transform: translateY(-2px);
             box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
         }
-        button:active { transform: translateY(0); }
         button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
@@ -102,16 +88,6 @@
             display: none;
         }
         .result.show { display: block; }
-        .version-box {
-            background: #f0f4ff;
-            border-left: 4px solid #667eea;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 0 8px 8px 0;
-            font-size: 14px;
-            color: #555;
-            line-height: 1.6;
-        }
         .prompt-box {
             background: #1e1e1e;
             color: #d4d4d4;
@@ -122,9 +98,10 @@
             line-height: 1.6;
             white-space: pre-wrap;
             word-wrap: break-word;
-            max-height: 400px;
+            max-height: 500px;
             overflow-y: auto;
             position: relative;
+            margin-top: 20px;
         }
         .copy-btn {
             position: absolute;
@@ -174,16 +151,9 @@
             font-size: 14px;
             color: #666;
         }
-        .tips h3 {
-            margin-bottom: 10px;
-            color: #333;
-        }
-        .tips ul {
-            margin-left: 20px;
-        }
-        .tips li {
-            margin: 5px 0;
-        }
+        .tips h3 { margin-bottom: 10px; color: #333; }
+        .tips ul { margin-left: 20px; }
+        .tips li { margin: 5px 0; }
         @media (max-width: 600px) {
             .options { grid-template-columns: 1fr; }
             .header h1 { font-size: 24px; }
@@ -201,7 +171,7 @@
         <div class="content">
             <div class="input-group">
                 <label>场景描述</label>
-                <textarea id="sceneInput" placeholder="例如：炼气期主角在茶楼打脸筑基期对手，周围食客震惊...">炼气期主角在茶楼打脸筑基期对手，10秒</textarea>
+                <textarea id="sceneInput" placeholder="例如：炼气期主角在茶楼打脸筑基期对手...">炼气期主角在茶楼打脸筑基期对手，10秒</textarea>
             </div>
             
             <div class="options">
@@ -229,7 +199,6 @@
             <button onclick="generatePrompt()" id="genBtn">生成专业提示词</button>
             
             <div id="result" class="result">
-                <div class="version-box" id="versionBox"></div>
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <label style="margin:0;">Seedance 2.0 提示词（直接复制使用）</label>
                 </div>
@@ -248,7 +217,7 @@
             <div class="tips">
                 <h3>💡 使用技巧</h3>
                 <ul>
-                    <li>描述包含：<strong>境界</strong>（炼气/筑基/金丹）+ <strong>场景</strong>（茶楼/演武场/宿舍）+ <strong>动作</strong>（打脸/突破/对话）</li>
+                    <li>描述包含：<strong>境界</strong>（炼气/筑基/金丹）+ <strong>场景</strong>（茶楼/演武场）+ <strong>动作</strong>（打脸/突破）</li>
                     <li>可指定<strong>镜头</strong>（如：中近景、环绕运镜、推近特写）</li>
                     <li>可指定<strong>情绪</strong>（如：愤怒压抑、暗爽偷笑、震惊瞳孔地震）</li>
                     <li>生成的提示词可直接粘贴到 <strong>Seedance 2.0</strong> 使用</li>
@@ -258,7 +227,6 @@
     </div>
 
     <script>
-        // API配置 - 使用Vercel代理地址
         const API_URL = 'https://seedance-generator-ten.vercel.app/api/generate';
         
         async function generatePrompt() {
@@ -271,7 +239,6 @@
                 return;
             }
             
-            // UI状态
             document.getElementById('genBtn').disabled = true;
             document.getElementById('loading').style.display = 'block';
             document.getElementById('result').classList.remove('show');
@@ -280,25 +247,15 @@
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        scene: scene,
-                        duration: duration,
-                        style: style
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ scene, duration, style })
                 });
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
                 const data = await response.json();
-                console.log('API Response:', data);
-                
-                // 解析响应
                 let content = '';
+                
                 if (data.messages && data.messages.length > 0) {
                     content = data.messages[0].content;
                 } else if (data.content) {
@@ -307,37 +264,17 @@
                     throw new Error('无法解析API响应');
                 }
                 
-                // 处理转义字符：先把 \\n 换成 \n，再把 \\ 去掉，最后把 \n 换成 <br>
-                content = content.replace(/\\n/g, '\n').replace(/\\\\/g, '');
-                
-                // 分离版本优化和提示词
-                              // 清理转义字符（关键！）
+                // 关键：处理转义字符 \\n → 换行，\\" → "，\\ → 空
                 content = content.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\/g, '');
                 
-                // 分割内容，只取版本优化和提示词，去掉强制约束
-                const parts = content.split('### 【');
-                let versionHtml = '';
-                let promptHtml = '';
-                
-                if (parts.length >= 3) {
-                    // 取版本优化部分（parts[1]），去掉后面的标题
-                    versionHtml = parts[1].split('### 【')[0].replace('版本优化】', '').trim();
-                    
-                    // 取提示词部分（parts[2]），遇到 ## 强制约束就停止
-                    promptHtml = parts[2].split('## ')[0].trim();
-                    
-                    document.getElementById('versionBox').innerHTML = versionHtml.replace(/\n/g, '<br>');
-                    document.getElementById('promptContent').innerHTML = ('### 【' + promptHtml).replace(/\n/g, '<br>');
-                } else {
-                    // 格式不对就显示全部
-                    document.getElementById('versionBox').textContent = '已生成专业提示词';
-                    document.getElementById('promptContent').innerHTML = content.replace(/\n/g, '<br>');
-                }
+                // 直接显示，不分割
+                document.getElementById('promptContent').innerHTML = content.replace(/\n/g, '<br>');
+                document.getElementById('result').classList.add('show');
                 
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('error').style.display = 'block';
-                document.getElementById('error').textContent = '生成失败：' + error.message + '，请检查网络或API配置';
+                document.getElementById('error').textContent = '生成失败：' + error.message;
             } finally {
                 document.getElementById('genBtn').disabled = false;
                 document.getElementById('loading').style.display = 'none';
@@ -350,16 +287,11 @@
                 const btn = document.querySelector('.copy-btn');
                 btn.textContent = '已复制!';
                 setTimeout(() => btn.textContent = '复制', 2000);
-            }).catch(() => {
-                alert('复制失败，请手动选择复制');
             });
         }
         
-        // 回车快捷生成
         document.getElementById('sceneInput').addEventListener('keydown', function(e) {
-            if (e.ctrlKey && e.key === 'Enter') {
-                generatePrompt();
-            }
+            if (e.ctrlKey && e.key === 'Enter') generatePrompt();
         });
     </script>
 </body>
