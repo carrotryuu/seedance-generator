@@ -314,7 +314,17 @@
                 }
                 
                 // 分离版本优化和提示词
-                const parts = content.split('### 【');
+const parts = content.split('### 【');
+if (parts.length >= 3) {
+    const versionPart = '### 【' + parts[1];
+    const promptPart = '### 【' + parts[2];
+    
+    document.getElementById('versionBox').textContent = versionPart.replace('### 【版本优化】', '').trim();
+    document.getElementById('promptContent').textContent = '### 【' + promptPart.trim();
+} else {
+    document.getElementById('versionBox').textContent = '已生成专业提示词';
+    document.getElementById('promptContent').textContent = content;
+}
                 if (parts.length >= 3) {
                     const versionPart = '### 【' + parts[1];
                     const promptPart = '### 【' + parts[2];
