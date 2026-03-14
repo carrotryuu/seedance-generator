@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seedance 3D漫剧提示词生成器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 900px; 
+            margin: 0 auto; 
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        .header h1 { 
+            font-size: 32px; 
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        .header p { 
+            opacity: 0.9; 
+            font-size: 16px;
+        }
+        .content { padding: 40px; }
+        .input-group { 
+            margin-bottom: 30px; 
+        }
+        label { 
+            display: block; 
+            margin-bottom: 10px; 
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+        textarea { 
+            width: 100%; 
+            height: 120px; 
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            resize: vertical;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+        textarea:focus { 
+            outline: none; 
+            border-color: #667eea; 
+        }
+        .options { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        select, input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+        button { 
+            width: 100%; 
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        button:active { transform: translateY(0); }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result { 
+            margin-top: 30px;
+            display: none;
+        }
+        .result.show { display: block; }
+        .version-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 0 8px 8px 0;
+            font-size: 14px;
+            color: #555;
+        }
+        .prompt-box {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+            position: relative;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        .copy-btn:hover { opacity: 1; }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #667eea;
+            border-top-color: transparent;
+            border-radius: 50%;
+            margin-left: 10px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #c33;
+        }
+        .tips {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        .tips h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .tips ul {
+            margin-left: 20px;
+        }
+        .tips li {
+            margin: 5px 0;
+        }
+        @media (max-width: 600px) {
+            .options { grid-template-columns: 1fr; }
+            .header h1 { font-size: 24px; }
+            .content { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 Seedance 3D漫剧提示词生成器</h1>
+            <p>专业级AI视频提示词生成工具 | 支持修仙/高武/系统流</p>
+        </div>
+        
+        <div class="content">
+            <div class="input-group">
+                <label>场景描述</label>
+                <textarea id="sceneInput" placeholder="例如：炼气期主角在茶楼打脸筑基期对手，周围食客震惊...">炼气期主角在茶楼打脸筑基期对手，10秒</textarea>
+            </div>
+            
+            <div class="options">
+                <div>
+                    <label>视频时长</label>
+                    <select id="duration">
+                        <option value="8">8秒（短平快）</option>
+                        <option value="10" selected>10秒（标准）</option>
+                        <option value="12">12秒（丰富）</option>
+                        <option value="15">15秒（完整）</option>
+                    </select>
+                </div>
+                <div>
+                    <label>题材风格</label>
+                    <select id="style">
+                        <option value="修仙" selected>修仙流</option>
+                        <option value="高武">高武都市</option>
+                        <option value="系统">系统流</option>
+                        <option value="日常">日常情感</option>
+                        <option value="诡异">诡异规则</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button onclick="generatePrompt()" id="genBtn">生成专业提示词</button>
+            
+            <div id="result" class="result">
+                <div class="version-box" id="versionBox"></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <label style="margin:0;">Seedance 2.0 提示词（直接复制使用）</label>
+                </div>
+                <div class="prompt-box" id="promptBox">
+                    <button class="copy-btn" onclick="copyPrompt()">复制</button>
+                    <div id="promptContent"></div>
+                </div>
+            </div>
+            
+            <div id="loading" class="loading" style="display:none;">
+                正在分析场景并生成工业级提示词...
+            </div>
+            
+            <div id="error" class="error" style="display:none;"></div>
+            
+            <div class="tips">
+                <h3>💡 使用技巧</h3>
+                <ul>
+                    <li>描述包含：<strong>境界</strong>（炼气/筑基/金丹）+ <strong>场景</strong>（茶楼/演武场/宿舍）+ <strong>动作</strong>（打脸/突破/对话）</li>
+                    <li>可指定<strong>镜头</strong>（如：中近景、环绕运镜、推近特写）</li>
+                    <li>可指定<strong>情绪</strong>（如：愤怒压抑、暗爽偷笑、震惊瞳孔地震）</li>
+                    <li>生成的提示词可直接粘贴到 <strong>Seedance 2.0</strong> 使用</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API配置（你的密钥和Bot ID）
+        const API_KEY = 'pat_cSo4fTDYGNDJvbajkfzY2ZpY6P1nHkgDQxNKubm7BFeeyFkI1NkC9G0Y7uzPUI0t';
+        const BOT_ID = '7488009369294827546';
+        const API_URL = 'https://api.coze.cn/open_api/v2/chat';
+        
+        async function generatePrompt() {
+            const scene = document.getElementById('sceneInput').value.trim();
+            const duration = document.getElementById('duration').value;
+            const style = document.getElementById('style').value;
+            
+            if (!scene) {
+                alert('请输入场景描述');
+                return;
+            }
+            
+            // 构建完整查询
+            const fullQuery = `${scene}，${duration}秒，${style}风格`;
+            
+            // UI状态
+            document.getElementById('genBtn').disabled = true;
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').classList.remove('show');
+            document.getElementById('error').style.display = 'none';
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        bot_id: BOT_ID,
+                        user: 'web_user_' + Date.now(),
+                        query: fullQuery,
+                        stream: false,
+                        custom_variables: {
+                            duration: duration,
+                            style: style
+                        }
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('API Response:', data);
+                
+                // 解析响应
+                let content = '';
+                if (data.messages && data.messages.length > 0) {
+                    content = data.messages[0].content;
+                } else if (data.content) {
+                    content = data.content;
+                } else {
+                    throw new Error('无法解析API响应');
+                }
+                
+                // 分离版本优化和提示词
+                const parts = content.split('### 【');
+                if (parts.length >= 3) {
+                    const versionPart = '### 【' + parts[1];
+                    const promptPart = '### 【' + parts[2];
+                    
+                    document.getElementById('versionBox').textContent = versionPart.replace('### 【版本优化】', '').trim();
+                    document.getElementById('promptContent').textContent = '### 【' + promptPart.trim();
+                } else {
+                    // 如果格式不对，直接显示全部
+                    document.getElementById('versionBox').textContent = '已生成专业提示词';
+                    document.getElementById('promptContent').textContent = content;
+                }
+                
+                document.getElementById('result').classList.add('show');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = '生成失败：' + error.message + '，请检查网络或API配置';
+            } finally {
+                document.getElementById('genBtn').disabled = false;
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        function copyPrompt() {
+            const text = document.getElementById('promptContent').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.textContent = '已复制!';
+                setTimeout(() => btn.textContent = '复制', 2000);
+            }).catch(() => {
+                alert('复制失败，请手动选择复制');
+            });
+        }
+        
+        // 回车快捷生成
+        document.getElementById('sceneInput').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                generatePrompt();
+            }
+        });
+    </script>
+</body>
+</html>
